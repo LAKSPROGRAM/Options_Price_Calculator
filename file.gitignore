@@ -1,0 +1,15 @@
+# Target build directory for Java/Maven
+options-backend/target/
+options-backend/*.class
+
+# IDE specific files
+.idea/
+*.iml
+.classpath
+.project
+.settings/
+.vscode/
+
+# OS generated files
+.DS_Store
+Thumbs.db

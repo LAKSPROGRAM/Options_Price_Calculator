@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Options Calculator | Upstox Style</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg:          #f3f5f7;
+    --surface:     #ffffff;
+    --surface-alt: #fafbfc;
+    --border:      #e2e5e9;
+    --border-dark: #d1d5db;
+    --text:        #1f2937;
+    --text-mid:    #4b5563;
+    --text-muted:  #9ca3af;
+    --green:       #00b386;
+    --green-bg:    #e6f9f1;
+    --red:         #ff5252;
+    --red-bg:      #ffeded;
+    --orange:      #ff9f43;
+    --orange-bg:   #fff4e5;
+    --blue:        #387ed1;
+    --blue-bg:     #eaf2fc;
+    --purple:      #6c5ce7;
+    --font-sans: 'Inter', -apple-system, sans-serif;
+    --font-mono: 'Roboto Mono', monospace;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .topnav {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 20px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .topnav-left { display: flex; align-items: center; gap: 24px; }
+  .brand { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 17px; letter-spacing: -0.02em; }
+  .brand .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--purple); }
+  .brand-sub { font-size: 11px; color: var(--text-muted); font-weight: 500; padding: 2px 8px; border: 1px solid var(--border); border-radius: 4px; }
+  .nav-tabs { display: flex; gap: 4px; }
+  .nav-tab { padding: 6px 12px; font-size: 13px; font-weight: 500; color: var(--text-muted); border-radius: 6px; cursor: default; }
+  .nav-tab.active { color: var(--text); background: var(--surface-alt); }
+  .topnav-right { display: flex; align-items: center; gap: 14px; }
+  .conn-badge { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; padding: 5px 10px; border-radius: 6px; background: var(--surface-alt); border: 1px solid var(--border); }
+  .conn-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-muted); transition: background 0.3s; }
+  .conn-dot.live { background: var(--green); box-shadow: 0 0 0 0 rgba(0,179,134,0.6); animation: pulse 1.6s infinite; }
+  .conn-dot.error { background: var(--red); }
+  @keyframes pulse {
+    0%   { box-shadow: 0 0 0 0 rgba(0,179,134,0.5); }
+    70%  { box-shadow: 0 0 0 5px rgba(0,179,134,0); }
+    100% { box-shadow: 0 0 0 0 rgba(0,179,134,0); }
+  }
+  .nse-tag { font-size: 11px; font-weight: 600; color: var(--text-mid); background: var(--surface-alt); border: 1px solid var(--border); border-radius: 4px; padding: 4px 8px; }
+  #clock { font-family: var(--font-mono); font-size: 12px; color: var(--text-mid); font-weight: 500; }
+
+  .layout { display: grid; grid-template-columns: 320px 1fr; min-height: calc(100vh - 52px); }
+
+  .sidebar { background: var(--surface); border-right: 1px solid var(--border); padding: 16px; overflow-y: auto; }
+  .ticket-card { border: 1px solid var(--border); border-radius: 8px; margin-bottom: 14px; overflow: hidden; }
+  .ticket-header { padding: 10px 14px; background: var(--surface-alt); border-bottom: 1px solid var(--border); font-size: 12px; font-weight: 600; color: var(--text-mid); text-transform: uppercase; letter-spacing: 0.04em; display: flex; align-items: center; justify-content: space-between; }
+  .ticket-body { padding: 14px; }
+
+  .field { margin-bottom: 12px; }
+  .field:last-child { margin-bottom: 0; }
+  .field label { display: block; font-size: 11px; font-weight: 500; color: var(--text-muted); margin-bottom: 5px; }
+  .field input, .field select {
+    width: 100%; background: var(--surface); border: 1px solid var(--border-dark); border-radius: 6px;
+    color: var(--text); font-family: var(--font-mono); font-size: 13px; padding: 8px 10px; outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .field input:focus, .field select:focus { border-color: var(--purple); box-shadow: 0 0 0 3px rgba(108,92,231,0.1); }
+  .field input::placeholder { color: var(--text-muted); font-family: var(--font-sans); }
+  .field select { font-family: var(--font-sans); cursor: pointer; }
+
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+  .pill-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .pill-toggle input { display: none; }
+  .pill-toggle label { text-align: center; padding: 8px; border-radius: 6px; border: 1px solid var(--border-dark); font-size: 12px; font-weight: 600; cursor: pointer; color: var(--text-mid); transition: all 0.15s; }
+  .pill-toggle input#opt-ce:checked ~ label[for="opt-ce"] { background: var(--green-bg); border-color: var(--green); color: var(--green); }
+  .pill-toggle input#opt-pe:checked ~ label[for="opt-pe"] { background: var(--red-bg); border-color: var(--red); color: var(--red); }
+
+  .btn { width: 100%; padding: 11px; border: none; border-radius: 6px; font-family: var(--font-sans); font-size: 13px; font-weight: 600; cursor: pointer; transition: opacity 0.15s, transform 0.1s; }
+  .btn:active { transform: scale(0.985); }
+  .btn-buy { background: var(--green); color: #fff; }
+  .btn-buy:hover { opacity: 0.92; }
+  .btn-outline { background: var(--surface); border: 1px solid var(--border-dark); color: var(--text-mid); margin-top: 8px; }
+  .btn-outline:hover { border-color: var(--purple); color: var(--purple); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .toggle-row { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+  .toggle-row span { font-size: 12px; font-weight: 500; color: var(--text-mid); }
+  .toggle { position: relative; width: 36px; height: 20px; }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider { position: absolute; inset: 0; background: var(--border-dark); border-radius: 10px; cursor: pointer; transition: background 0.2s; }
+  .toggle-slider::before { content: ''; position: absolute; width: 14px; height: 14px; left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: transform 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.15); }
+  .toggle input:checked + .toggle-slider { background: var(--green); }
+  .toggle input:checked + .toggle-slider::before { transform: translateX(16px); }
+
+  .error-box { font-size: 11.5px; color: var(--red); background: var(--red-bg); border: 1px solid #ffd0d0; border-radius: 6px; padding: 9px 11px; margin-top: 10px; display: none; line-height: 1.5; }
+
+  .content { padding: 16px 20px; }
+
+  .symbol-strip { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px 18px; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
+  .symbol-id { display: flex; align-items: center; gap: 12px; }
+  .symbol-name { font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
+  .symbol-type-badge { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 4px; }
+  .symbol-type-badge.ce { background: var(--green-bg); color: var(--green); }
+  .symbol-type-badge.pe { background: var(--red-bg); color: var(--red); }
+  .symbol-meta { font-size: 11.5px; color: var(--text-muted); font-family: var(--font-mono); }
+  .ltp-block { text-align: right; }
+  .ltp-value { font-family: var(--font-mono); font-size: 26px; font-weight: 600; line-height: 1.1; transition: color 0.25s; }
+  .ltp-change { font-family: var(--font-mono); font-size: 12px; font-weight: 500; margin-top: 2px; }
+  .ltp-change.up { color: var(--green); }
+  .ltp-change.down { color: var(--red); }
+
+  .quote-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 14px; }
+  .quote-cell { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; }
+  .quote-label { font-size: 11px; color: var(--text-muted); font-weight: 500; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.03em; }
+  .quote-value { font-family: var(--font-mono); font-size: 17px; font-weight: 600; }
+  .quote-sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 14px; overflow: hidden; }
+  .panel-head { padding: 12px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .panel-title { font-size: 13px; font-weight: 600; }
+  .panel-tag { font-size: 11px; color: var(--text-muted); font-family: var(--font-mono); }
+
+  .greeks-table { width: 100%; border-collapse: collapse; }
+  .greeks-table th { text-align: center; font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; padding: 10px 8px; border-bottom: 1px solid var(--border); background: var(--surface-alt); }
+  .greeks-table td { text-align: center; padding: 14px 8px; font-family: var(--font-mono); font-size: 15px; font-weight: 600; border-bottom: 1px solid var(--border); }
+  .greeks-table tr:last-child td { border-bottom: none; }
+  .greeks-table .g-positive { color: var(--green); }
+  .greeks-table .g-negative { color: var(--red); }
+  .greeks-table .g-neutral  { color: var(--blue); }
+  .greek-desc-row td { font-family: var(--font-sans); font-size: 10.5px; font-weight: 400; color: var(--text-muted); padding-top: 0; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+
+  .iv-wrap { padding: 14px 18px; }
+  .iv-top-row { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 8px; }
+  .iv-label { font-size: 12px; font-weight: 600; color: var(--text-mid); }
+  .iv-number { font-family: var(--font-mono); font-size: 18px; font-weight: 700; }
+  .iv-track { height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; position: relative; }
+  .iv-fill { height: 100%; border-radius: 4px; width: 0%; transition: width 0.6s ease, background 0.3s; }
+  .iv-scale { display: flex; justify-content: space-between; font-size: 10px; color: var(--text-muted); margin-top: 5px; font-family: var(--font-mono); }
+  .iv-sentiment { margin-top: 10px; font-size: 12px; padding: 8px 12px; border-radius: 6px; font-weight: 500; }
+
+  .predict-target-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1px; background: var(--border); border-bottom: 1px solid var(--border); }
+  .predict-target-cell { background: var(--surface); padding: 14px 18px; text-align: center; }
+  .predict-target-label { font-size: 11px; color: var(--text-muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.03em; }
+  .predict-target-value { font-family: var(--font-mono); font-size: 17px; font-weight: 600; }
+
+  .exit-banner { margin: 16px 18px; border-radius: 8px; padding: 18px 20px; display: flex; align-items: center; justify-content: space-between; }
+  .exit-banner.profit { background: var(--green-bg); border: 1px solid #b8ecd9; }
+  .exit-banner.loss   { background: var(--red-bg); border: 1px solid #ffd6d6; }
+  .exit-banner-label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; }
+  .exit-banner.profit .exit-banner-label { color: var(--green); }
+  .exit-banner.loss .exit-banner-label   { color: var(--red); }
+  .exit-banner-sub { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+  .exit-banner-value { font-family: var(--font-mono); font-size: 30px; font-weight: 700; }
+  .exit-banner.profit .exit-banner-value { color: var(--green); }
+  .exit-banner.loss .exit-banner-value   { color: var(--red); }
+
+  .pnl-rows { padding: 0 18px 16px; }
+  .pnl-row { display: flex; align-items: center; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 12.5px; }
+  .pnl-row:last-child { border-bottom: none; }
+  .pnl-row-label { color: var(--text-mid); }
+  .pnl-row-value { font-family: var(--font-mono); font-weight: 600; }
+  .pos { color: var(--green); }
+  .neg { color: var(--red); }
+  .neu { color: var(--blue); }
+  .pnl-divider { margin-top: 6px; padding-top: 12px; border-top: 2px solid var(--border); }
+
+  .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 420px; gap: 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; text-align: center; padding: 40px; }
+  .empty-icon { width: 56px; height: 56px; border-radius: 50%; background: var(--surface-alt); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 24px; color: var(--text-muted); }
+  .empty-title { font-size: 15px; font-weight: 600; }
+  .empty-text { font-size: 12.5px; color: var(--text-muted); max-width: 320px; line-height: 1.7; }
+  .empty-text strong { color: var(--purple); }
+
+  .spinner { display: inline-block; width: 13px; height: 13px; border: 2px solid rgba(255,255,255,0.4); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 6px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .last-refresh { text-align: right; font-size: 11px; color: var(--text-muted); font-family: var(--font-mono); margin-top: 8px; }
+
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+    .sidebar { border-right: none; border-bottom: 1px solid var(--border); }
+    .quote-row { grid-template-columns: 1fr 1fr; }
+    .greeks-table { font-size: 11px; }
+    .predict-target-row { grid-template-columns: 1fr; }
+    .nav-tabs { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topnav">
+  <div class="topnav-left">
+    <div class="brand">
+      <span class="dot"></span>
+      Options Calc
+      <span class="brand-sub">PRO</span>
+    </div>
+    <div class="nav-tabs">
+      <div class="nav-tab active">Watchlist</div>
+      <div class="nav-tab">Positions</div>
+      <div class="nav-tab">Orders</div>
+      <div class="nav-tab">Greeks</div>
+    </div>
+  </div>
+  <div class="topnav-right">
+    <div class="conn-badge">
+      <div class="conn-dot" id="conn-dot"></div>
+      <span id="conn-label">Disconnected</span>
+    </div>
+    <span class="nse-tag">NSE</span>
+    <span id="clock">--:--:--</span>
+  </div>
+</div>
+
+<div class="layout">
+
+  <div class="sidebar">
+
+    <div class="ticket-card">
+      <div class="ticket-header">Connect</div>
+      <div class="ticket-body">
+        <div class="field">
+          <label>Access Token</label>
+          <input type="password" id="access-token" placeholder="Paste daily Upstox token"/>
+        </div>
+        <div class="field">
+          <label>Instrument Key</label>
+          <input type="text" id="instrument-key" placeholder="NSE_FO|55097"/>
+        </div>
+      </div>
+    </div>
+
+    <div class="ticket-card">
+      <div class="ticket-header">Contract</div>
+      <div class="ticket-body">
+        <div class="field">
+          <label>Option Type</label>
+          <div class="pill-toggle">
+            <input type="radio" name="opt-type" id="opt-ce" value="CE" checked/>
+            <input type="radio" name="opt-type" id="opt-pe" value="PE"/>
+            <label for="opt-ce">CALL (CE)</label>
+            <label for="opt-pe">PUT (PE)</label>
+          </div>
+        </div>
+        <div class="field row2">
+          <div>
+            <label>Strike Price</label>
+            <input type="number" id="strike" value="24000" step="50"/>
+          </div>
+          <div>
+            <label>Days to Expiry</label>
+            <input type="number" id="dte" value="7" min="0" step="1"/>
+          </div>
+        </div>
+        <div class="field">
+          <label>Risk-Free Rate (%)</label>
+          <input type="number" id="rfr" value="7.0" step="0.1"/>
+        </div>
+        <button class="btn btn-outline" id="locate-btn" onclick="locateKey()">
+          Auto-locate instrument key
+        </button>
+      </div>
+    </div>
+
+    <div class="ticket-card">
+      <div class="ticket-header">Target scenario</div>
+      <div class="ticket-body">
+        <div class="field">
+          <label>Target Nifty Level</label>
+          <input type="number" id="target-spot" value="23800" step="50"/>
+        </div>
+        <div class="field">
+          <label>Minutes to Target</label>
+          <input type="number" id="minutes" value="45" min="1"/>
+        </div>
+        <button class="btn btn-buy" id="fetch-btn" onclick="fetchAndRender()">
+          Fetch &amp; predict
+        </button>
+        <div class="toggle-row">
+          <span>Auto-refresh (1s)</span>
+          <label class="toggle">
+            <input type="checkbox" id="auto-refresh-toggle" onchange="toggleAutoRefresh()"/>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="error-box" id="error-box"></div>
+      </div>
+    </div>
+
+    <div class="ticket-card">
+      <div class="ticket-header">Advanced</div>
+      <div class="ticket-body">
+        <div class="field">
+          <label>Backend URL</label>
+          <input type="text" id="backend-url" value="http://localhost:8000"/>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="content" id="content">
+    <div class="empty-state">
+      <div class="empty-icon">+</div>
+      <div class="empty-title">No contract loaded</div>
+      <div class="empty-text">
+        Enter your Upstox access token and instrument key, then press
+        <strong>Fetch &amp; predict</strong> to see live Greeks and price targets.
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+setInterval(() => {
+  document.getElementById('clock').textContent =
+    new Date().toLocaleTimeString('en-IN', { hour12: false });
+}, 1000);
+
+let autoTimer = null;
+let lastData  = null;
+
+const $ = id => document.getElementById(id);
+const BASE = () => $('backend-url').value.replace(/\/$/, '');
+
+function setStatus(state) {
+  const dot   = $('conn-dot');
+  const label = $('conn-label');
+  dot.className = 'conn-dot';
+  if (state === 'live')       { dot.classList.add('live');  label.textContent = 'Live'; }
+  else if (state === 'error') { dot.classList.add('error'); label.textContent = 'Error'; }
+  else if (state === 'connecting') { label.textContent = 'Connecting…'; }
+  else { label.textContent = 'Disconnected'; }
+}
+
+function showError(msg) {
+  const el = $('error-box');
+  el.textContent = msg;
+  el.style.display = 'block';
+  setStatus('error');
+}
+function clearError() { $('error-box').style.display = 'none'; }
+
+function fmt(n, dec = 2) {
+  if (n == null || isNaN(n)) return '—';
+  return Number(n).toLocaleString('en-IN', {
+    minimumFractionDigits: dec,
+    maximumFractionDigits: dec,
+  });
+}
+function signClass(n) { return n > 0 ? 'pos' : n < 0 ? 'neg' : ''; }
+
+async function fetchAndRender() {
+  clearError();
+  const token  = $('access-token').value.trim();
+  const key    = $('instrument-key').value.trim();
+  const strike = parseFloat($('strike').value);
+  const dte    = parseFloat($('dte').value);
+  const rfr    = parseFloat($('rfr').value) / 100;
+  const type   = document.querySelector('input[name="opt-type"]:checked').value;
+  const tspot  = parseFloat($('target-spot').value);
+  const mins   = parseInt($('minutes').value);
+
+  if (!token || !key) {
+    showError('Access token and instrument key are required.');
+    return;
+  }
+
+  setStatus('connecting');
+  const btn = $('fetch-btn');
+  const originalLabel = btn.textContent;
+  btn.innerHTML = '<span class="spinner"></span>Fetching…';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch(`${BASE()}/api/predict`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        instrument_key:   key,
+        access_token:     token,
+        strike:           strike,
+        days_to_expiry:   dte,
+        option_type:      type,
+        risk_free_rate:   rfr,
+        target_spot:      tspot,
+        minutes_until_target: mins,
+      }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(err.detail || `HTTP ${res.status}`);
+    }
+
+    const data = await res.json();
+    renderDashboard(data, key, strike, type);
+    setStatus('live');
+    lastData = data;
+
+  } catch (e) {
+    showError(`${e.message}`);
+    if (!lastData) showEmptyState();
+  } finally {
+    btn.innerHTML = originalLabel;
+    btn.disabled = false;
+  }
+}
+
+async function locateKey() {
+  clearError();
+  const strike = $('strike').value;
+  const type   = document.querySelector('input[name="opt-type"]:checked').value;
+  const btn    = $('locate-btn');
+  const original = btn.textContent;
+  btn.textContent = 'Locating…';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch(
+      `${BASE()}/api/locate-key?symbol=NIFTY&strike=${strike}&opt_type=${type}`
+    );
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(err.detail);
+    }
+    const d = await res.json();
+    $('instrument-key').value = d.instrument_key;
+    $('dte').value = d.days_to_expiry;
+    clearError();
+  } catch (e) {
+    showError(`Locate failed: ${e.message}`);
+  } finally {
+    btn.textContent = original;
+    btn.disabled = false;
+  }
+}
+
+function toggleAutoRefresh() {
+  if ($('auto-refresh-toggle').checked) {
+    autoTimer = setInterval(fetchAndRender, 1000);
+  } else {
+    clearInterval(autoTimer);
+    autoTimer = null;
+  }
+}
+
+function showEmptyState() {
+  $('content').innerHTML = `
+    <div class="empty-state">
+      <div class="empty-icon">+</div>
+      <div class="empty-title">No contract loaded</div>
+      <div class="empty-text">
+        Enter your Upstox access token and instrument key, then press
+        <strong>Fetch &amp; predict</strong> to see live Greeks and price targets.
+      </div>
+    </div>`;
+}
+
+function renderDashboard(d, instrumentKey, strike, type) {
+  const prevPremium = lastData?.live_premium;
+  const dir = prevPremium != null
+    ? (d.live_premium > prevPremium ? 'up' : d.live_premium < prevPremium ? 'down' : null)
+    : null;
+  const changeAbs = prevPremium != null ? d.live_premium - prevPremium : 0;
+  const changePct = prevPremium ? (changeAbs / prevPremium) * 100 : 0;
+
+  const pnlDirection = d.predicted_premium >= d.live_premium ? 'profit' : 'loss';
+  const pnlArrow = pnlDirection === 'profit' ? '↑' : '↓';
+
+  const ivColor = d.iv < 18 ? '#387ed1' : d.iv < 25 ? '#00b386' : '#ff5252';
+  const ivBg    = d.iv < 18 ? 'var(--blue-bg)' : d.iv < 25 ? 'var(--green-bg)' : 'var(--red-bg)';
+
+  $('content').innerHTML = `
+
+    <div class="symbol-strip">
+      <div class="symbol-id">
+        <div class="symbol-name">NIFTY ${fmt(strike, 0)}</div>
+        <div class="symbol-type-badge ${type.toLowerCase()}">${type === 'CE' ? 'CALL' : 'PUT'}</div>
+        <div class="symbol-meta">${escapeHtml(instrumentKey)}</div>
+      </div>
+      <div class="ltp-block">
+        <div class="ltp-value" style="color:${dir === 'up' ? 'var(--green)' : dir === 'down' ? 'var(--red)' : 'var(--text)'}">
+          ₹${fmt(d.live_premium)}
+        </div>
+        ${prevPremium != null ? `
+        <div class="ltp-change ${dir === 'up' ? 'up' : dir === 'down' ? 'down' : ''}">
+          ${changeAbs >= 0 ? '+' : ''}${fmt(changeAbs)} (${changePct >= 0 ? '+' : ''}${fmt(changePct)}%)
+        </div>` : `<div class="ltp-change">LTP</div>`}
+      </div>
+    </div>
+
+    <div class="quote-row">
+      <div class="quote-cell">
+        <div class="quote-label">Nifty Spot</div>
+        <div class="quote-value">₹${fmt(d.spot_price)}</div>
+        <div class="quote-sub">Underlying index</div>
+      </div>
+      <div class="quote-cell">
+        <div class="quote-label">Volume</div>
+        <div class="quote-value">${Number(d.volume).toLocaleString('en-IN')}</div>
+        <div class="quote-sub">Contracts traded</div>
+      </div>
+      <div class="quote-cell">
+        <div class="quote-label">Implied Volatility</div>
+        <div class="quote-value" style="color:${ivColor}">${fmt(d.iv)}%</div>
+        <div class="quote-sub">Newton-Raphson IV</div>
+      </div>
+      <div class="quote-cell">
+        <div class="quote-label">Breakeven Move</div>
+        <div class="quote-value" style="color:var(--orange)">${d.breakeven_move != null ? '±' + fmt(d.breakeven_move) : '—'}</div>
+        <div class="quote-sub">Points required</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-title">Option Greeks</div>
+        <div class="panel-tag">Black-Scholes · Strike ${fmt(strike, 0)}</div>
+      </div>
+      <table class="greeks-table">
+        <thead>
+          <tr>
+            <th>Delta (Δ)</th>
+            <th>Gamma (Γ)</th>
+            <th>Theta (Θ)</th>
+            <th>Vega (ν)</th>
+            <th>Rho (ρ)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="${d.delta > 0 ? 'g-positive' : 'g-negative'}">${fmt(d.delta, 4)}</td>
+            <td class="g-neutral">${fmt(d.gamma, 6)}</td>
+            <td class="g-negative">${fmt(d.theta, 4)}</td>
+            <td class="g-neutral">${fmt(d.vega, 4)}</td>
+            <td class="${d.rho > 0 ? 'g-positive' : 'g-negative'}">${fmt(d.rho, 4)}</td>
+          </tr>
+          <tr class="greek-desc-row">
+            <td>₹ per pt of spot move</td>
+            <td>Delta change per pt</td>
+            <td>₹${fmt(Math.abs(d.theta))} lost/day</td>
+            <td>₹ per 1% IV move</td>
+            <td>₹ per 1% rate move</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="iv-wrap">
+        <div class="iv-top-row">
+          <span class="iv-label">Implied Volatility</span>
+          <span class="iv-number" style="color:${ivColor}">${fmt(d.iv)}%</span>
+        </div>
+        <div class="iv-track">
+          <div class="iv-fill" style="width:${Math.min(d.iv / 60 * 100, 100)}%; background:${ivColor}"></div>
+        </div>
+        <div class="iv-scale">
+          <span>0%</span><span>15%</span><span>30%</span><span>45%</span><span>60%+</span>
+        </div>
+        <div class="iv-sentiment" style="background:${ivBg}; color:${ivColor}">
+          ${escapeHtml(d.iv_sentiment)}
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-title">Target prediction</div>
+        <div class="panel-tag">Taylor expansion · Δ + Γ + Θ</div>
+      </div>
+
+      <div class="predict-target-row">
+        <div class="predict-target-cell">
+          <div class="predict-target-label">Current spot</div>
+          <div class="predict-target-value">₹${fmt(d.spot_price)}</div>
+        </div>
+        <div class="predict-target-cell">
+          <div class="predict-target-label">Target spot</div>
+          <div class="predict-target-value">₹${fmt(d.target_spot)}</div>
+        </div>
+        <div class="predict-target-cell">
+          <div class="predict-target-label">Spot move</div>
+          <div class="predict-target-value" style="color:${d.spot_change >= 0 ? 'var(--green)' : 'var(--red)'}">
+            ${d.spot_change >= 0 ? '+' : ''}${fmt(d.spot_change)} pts
+          </div>
+        </div>
+      </div>
+
+      <div class="exit-banner ${pnlDirection}">
+        <div>
+          <div class="exit-banner-label">${pnlArrow} Predicted exit price</div>
+          <div class="exit-banner-sub">in ${d.minutes} min, if Nifty moves to ₹${fmt(d.target_spot)}</div>
+        </div>
+        <div class="exit-banner-value">₹${fmt(d.predicted_premium)}</div>
+      </div>
+
+      <div class="pnl-rows">
+        <div class="pnl-row">
+          <span class="pnl-row-label">Delta P&amp;L (directional move)</span>
+          <span class="pnl-row-value ${signClass(d.delta_pnl)}">${d.delta_pnl >= 0 ? '+' : ''}₹${fmt(d.delta_pnl)}</span>
+        </div>
+        <div class="pnl-row">
+          <span class="pnl-row-label">Gamma P&amp;L (curvature bonus)</span>
+          <span class="pnl-row-value ${signClass(d.gamma_pnl)}">${d.gamma_pnl >= 0 ? '+' : ''}₹${fmt(d.gamma_pnl)}</span>
+        </div>
+        <div class="pnl-row">
+          <span class="pnl-row-label">Theta decay (${d.minutes} min)</span>
+          <span class="pnl-row-value neg">₹${fmt(d.theta_pnl)}</span>
+        </div>
+        <div class="pnl-row pnl-divider">
+          <span class="pnl-row-label">Vega risk (if IV shifts ±5%)</span>
+          <span class="pnl-row-value neu">±₹${fmt(d.vega_5pct_impact)}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="last-refresh">Last updated ${new Date().toLocaleTimeString('en-IN')}</div>
+  `;
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !$('fetch-btn').disabled) fetchAndRender();
+});
+</script>
+</body>
+</html>
