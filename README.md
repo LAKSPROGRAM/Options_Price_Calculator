@@ -1,4 +1,4 @@
-# 📈 Nifty Options Price Calculator & Predictor
+# 📈 Options Price Calculator & Predictor
 
 A full-stack algorithmic trading utility designed to fetch live market data, compute Black-Scholes Greeks, and predict future option premiums for Nifty 50 contracts using real-time data from the Upstox API.
 
